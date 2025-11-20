@@ -120,5 +120,12 @@ export interface Bin {
   color: string;
   lat: number;
   lng: number;
-  distance?: string; // Calculated on the fly
+  distance?: string;
+  numericDistance?: number;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
 }
