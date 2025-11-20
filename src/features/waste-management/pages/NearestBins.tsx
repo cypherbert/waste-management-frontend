@@ -1,252 +1,214 @@
+// frontend/src/components/BinLocator.tsx
 import { useState, useEffect, useRef } from 'react';
-import { Navigation } from 'lucide-react';
-import { BinApiService } from '@/features/waste-management/api/bin.api';
+import type { CSSProperties } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import type {
-  BinWithDistance,
-  BinType,
+  Coordinates,
+  Bin,
+  BinFilter,
 } from '@/features/waste-management/types';
-import { BIN_TYPE_COLORS, BIN_TYPE_LABELS } from '@/constant';
+import { fetchNearbyBins } from '@/features/waste-management/api/bin.api';
+import {
+  RecenterMap,
+  MapClickHandler,
+} from '@/features/waste-management/components';
+import { NearestBinCard } from '@/features/waste-management/components';
+import { LocationsSideBar } from '@/features/waste-management/components';
 
-export default function NearestBins() {
-  const [nearestBins, setNearestBins] = useState<BinWithDistance[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState({ lat: 13.7563, lng: 100.5018 });
-  const [binType, setBinType] = useState<BinType | ''>('');
-  const [selectedBin, setSelectedBin] = useState<BinWithDistance | null>(null);
+// Fix Leaflet default icon
+const icon = new URL(
+  'leaflet/dist/images/marker-icon.png',
+  import.meta.url
+).toString();
+const iconShadow = new URL(
+  'leaflet/dist/images/marker-shadow.png',
+  import.meta.url
+).toString();
 
-  const mapRef = useRef<HTMLDivElement>(null);
-  const googleMapRef = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const userMarkerRef = useRef<any>(null);
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
 
-  const initializeMap = () => {
-    if (!mapRef.current || googleMapRef.current) return;
-    const map = new (window as any).google.maps.Map(mapRef.current, {
-      center: { lat: location.lat, lng: location.lng },
-      zoom: 13,
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }],
-        },
-      ],
-    });
-    googleMapRef.current = map;
+L.Marker.prototype.options.icon = DefaultIcon;
 
-    userMarkerRef.current = new (window as any).google.maps.Marker({
-      position: { lat: location.lat, lng: location.lng },
-      map: map,
-      icon: {
-        path: (window as any).google.maps.SymbolPath.CIRCLE,
-        scale: 10,
-        fillColor: '#4285F4',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 3,
-      },
-      title: 'Your Location',
-    });
-  };
+export function BinLocator() {
+  const [userLocation, setUserLocation] = useState<Coordinates>({
+    lat: 51.505,
+    lng: -0.09,
+  });
+  const [bins, setBins] = useState<Bin[]>([]);
+  const [selectedBinId, setSelectedBinId] = useState<number | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeTypeFilter, setActiveTypeFilter] = useState<BinFilter>('All');
+  const mapRef = useRef<L.Map | null>(null);
 
-  const updateMapMarkers = () => {
-    if (!googleMapRef.current) return;
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = [];
+  // Fetch bins from API
+  useEffect(() => {
+    async function loadBins() {
+      try {
+        const data = await fetchNearbyBins(
+          userLocation.lat,
+          userLocation.lng,
+          activeTypeFilter === 'All' ? 'All' : activeTypeFilter,
+          searchQuery
+        );
+        setBins(data);
 
-    nearestBins.forEach((bin) => {
-      const marker = new (window as any).google.maps.Marker({
-        position: { lat: bin.latitude, lng: bin.longitude },
-        map: googleMapRef.current,
-        icon: {
-          path: (window as any).google.maps.SymbolPath.CIRCLE,
-          scale: 12,
-          fillColor: BIN_TYPE_COLORS[bin.bin_type],
-          fillOpacity: 0.9,
-          strokeColor: '#ffffff',
-          strokeWeight: 2,
-        },
-        title: bin.bin_name,
-      });
-
-      const infoWindow = new (window as any).google.maps.InfoWindow({
-        content: `
-          <div style="padding: 8px; min-width: 200px;">
-            <h3 style="margin: 0 0 8px 0; font-weight: bold; color: #111;">${bin.bin_name}</h3>
-            <p style="margin: 4px 0; color: #666; font-size: 14px;">Type: ${BIN_TYPE_LABELS[bin.bin_type]}</p>
-            <p style="margin: 4px 0; color: #666; font-size: 14px;">Status: ${bin.status.replace('_', ' ')}</p>
-            <p style="margin: 4px 0; color: #666; font-size: 14px;">Distance: ${bin.distance_km?.toFixed(2)} km</p>
-          </div>
-        `,
-      });
-
-      marker.addListener('click', () => {
-        infoWindow.open(googleMapRef.current, marker);
-        setSelectedBin(bin);
-      });
-      markersRef.current.push(marker);
-    });
-
-    if (nearestBins.length > 0) {
-      const bounds = new (window as any).google.maps.LatLngBounds();
-      bounds.extend({ lat: location.lat, lng: location.lng });
-      nearestBins.forEach((bin) => {
-        bounds.extend({ lat: bin.latitude, lng: bin.longitude });
-      });
-      googleMapRef.current.fitBounds(bounds);
+        // Auto-select nearest bin on first load
+        if (data.length > 0 && selectedBinId === null) {
+          setSelectedBinId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to fetch bins:', error);
+      }
     }
-  };
 
-  const findNearestBins = async () => {
-    try {
-      setLoading(true);
-      const bins = await BinApiService.getNearestBins(
-        location.lat,
-        location.lng,
-        binType || undefined,
-        10
-      );
-      setNearestBins(bins);
-    } catch (error) {
-      console.error('Error finding nearest bins:', error);
-    } finally {
-      setLoading(false);
+    loadBins();
+  }, [userLocation, activeTypeFilter, searchQuery]);
+
+  const nearestBin = bins.length > 0 ? bins[0] : null;
+
+  function handleSelectBin(binId: number) {
+    const target = bins.find((bin) => bin.id === binId);
+    if (!target) return;
+
+    setSelectedBinId(binId);
+    if (mapRef.current) {
+      mapRef.current.flyTo([target.lat, target.lng], 15, {
+        animate: true,
+        duration: 1,
+      });
     }
-  };
+  }
 
-  const getUserLocation = () => {
+  function handleMapClick(coords: Coordinates) {
+    setUserLocation(coords);
+    setSelectedBinId(null);
+  }
+
+  function handleLocateUser() {
+    setLoading(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const newLoc = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setLocation(newLoc);
-          if (googleMapRef.current) {
-            googleMapRef.current.setCenter(newLoc);
-            if (userMarkerRef.current)
-              userMarkerRef.current.setPosition(newLoc);
-          }
+        (position: GeolocationPosition) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          setSelectedBinId(null);
+          setLoading(false);
         },
-        (error) => {
-          console.error('Error getting location:', error);
-          alert(
-            'Unable to get your location. Please ensure location permissions are enabled.'
-          );
+        (error: GeolocationPositionError) => {
+          console.error(error);
+          alert('Could not access location.');
+          setLoading(false);
         }
       );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setLoading(false);
     }
+  }
+
+  const mapWrapperStyle: CSSProperties = {
+    position: 'relative',
+    width: '100%',
+    minHeight: 520,
+    borderRadius: 24,
+    overflow: 'hidden',
+    border: '1px solid #e5e7eb',
+    backgroundColor: '#fff',
+    boxShadow: '0 15px 45px rgba(15, 23, 42, 0.12)',
   };
 
-  useEffect(() => {
-    const loadGoogleMaps = () => {
-      if ((window as any).google && (window as any).google.maps) {
-        initializeMap();
-        return;
-      }
-      // Check for existing script
-      if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-        initializeMap();
-        return;
-      }
-      const script = document.createElement('script');
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_KEY || 'YOUR_API_KEY';
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => initializeMap();
-      document.head.appendChild(script);
-    };
-    loadGoogleMaps();
-  }, []);
-
-  useEffect(() => {
-    if (nearestBins.length > 0) updateMapMarkers();
-  }, [nearestBins]);
+  const mapContainerStyle: CSSProperties = {
+    height: '100%',
+    minHeight: 520,
+    width: '100%',
+  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Find Nearest Bins</h2>
-        <p className="text-gray-600">
-          Locate bins near your location with interactive map
-        </p>
-      </div>
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Latitude
-            </label>
-            <input
-              type="number"
-              step="0.0001"
-              value={location.lat}
-              onChange={(e) =>
-                setLocation({
-                  ...location,
-                  lat: parseFloat(e.target.value) || 0,
-                })
-              }
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Longitude
-            </label>
-            <input
-              type="number"
-              step="0.0001"
-              value={location.lng}
-              onChange={(e) =>
-                setLocation({
-                  ...location,
-                  lng: parseFloat(e.target.value) || 0,
-                })
-              }
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Filter by Type
-            </label>
-            <select
-              value={binType}
-              onChange={(e) => setBinType(e.target.value as BinType | '')}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Types</option>
-              <option value="RECYCLABLE">Recyclable</option>
-              <option value="GENERAL">General</option>
-              <option value="HAZARDOUS">Hazardous</option>
-              <option value="ORGANIC">Organic</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={getUserLocation}
-            className="flex items-center gap-2 rounded-lg bg-gray-200 px-4 py-2 transition hover:bg-gray-300"
+    <div className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
+      <h1 className="mb-6 text-2xl font-bold text-gray-800">
+        CityHub Waste Map
+      </h1>
+      <p className="mb-8 max-w-3xl text-center text-gray-500">
+        Explore recycling and disposal sites across the city. Use the filters to
+        view different bin types, select a location from the list, or click
+        anywhere on the map to update your position and refresh the nearest
+        results.
+      </p>
+
+      <div className="grid w-full max-w-6xl gap-6 md:grid-cols-[2fr,1fr]">
+        {/* Map Wrapper */}
+        <div
+          className="relative h-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+          style={mapWrapperStyle}
+        >
+          <NearestBinCard bin={nearestBin} />
+
+          <MapContainer
+            center={[userLocation.lat, userLocation.lng]}
+            zoom={13}
+            className="z-0 h-full w-full"
+            scrollWheelZoom
+            ref={mapRef}
+            style={mapContainerStyle}
           >
-            <Navigation className="h-4 w-4" />
-            Use My Location
-          </button>
-          <button
-            onClick={findNearestBins}
-            disabled={loading}
-            className="rounded-lg bg-blue-500 px-6 py-2 text-white transition hover:bg-blue-600 disabled:bg-gray-400"
-          >
-            {loading ? 'Searching...' : 'Find Bins'}
-          </button>
+            <RecenterMap lat={userLocation.lat} lng={userLocation.lng} />
+            <MapClickHandler onSelect={handleMapClick} />
+
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
+
+            {/* User Location Marker */}
+            <Marker position={[userLocation.lat, userLocation.lng]}>
+              <Popup className="font-sans">You are here</Popup>
+            </Marker>
+
+            {/* Bin Markers */}
+            {bins.map((bin) => (
+              <Marker
+                key={bin.id}
+                position={[bin.lat, bin.lng]}
+                opacity={selectedBinId === bin.id ? 1 : 0.75}
+                eventHandlers={{
+                  click: () => handleSelectBin(bin.id),
+                }}
+              >
+                <Popup>
+                  <div className="space-y-1 text-center">
+                    <h3 className="text-sm font-bold">{bin.name}</h3>
+                    <span className="text-xs text-gray-500">{bin.type}</span>
+                    <p className="text-xs font-semibold text-blue-600">
+                      Distance: {bin.distance ?? 'Not calculated'}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
         </div>
+
+        {/* Locations Sidebar */}
+        <LocationsSideBar
+          bins={bins}
+          selectedBinId={selectedBinId}
+          searchQuery={searchQuery}
+          activeTypeFilter={activeTypeFilter}
+          loading={loading}
+          onSearchChange={setSearchQuery}
+          onFilterChange={setActiveTypeFilter}
+          onBinSelect={handleSelectBin}
+          onLocateUser={handleLocateUser}
+        />
       </div>
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div ref={mapRef} className="h-96 w-full"></div>
-      </div>
-      {/* Nearest List Logic Omitted for brevity, but should be included as per original */}
     </div>
   );
 }
