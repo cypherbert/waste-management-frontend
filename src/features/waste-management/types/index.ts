@@ -107,3 +107,18 @@ export interface BinFilters {
   max_capacity?: number;
   [key: string]: string | number | boolean | undefined;
 }
+
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface Bin {
+  id: number;
+  name: string;
+  type: 'Recyclable' | 'General Waste' | 'Hazardous';
+  color: string;
+  lat: number;
+  lng: number;
+  distance?: string; // Calculated on the fly
+}
