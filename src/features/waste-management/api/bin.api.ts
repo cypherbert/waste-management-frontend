@@ -1,83 +1,63 @@
 import { apiClient } from '@/lib/apiClient';
-import type {
-  Bin,
-  BinWithDistance,
-  BinType,
-  BinStatus,
-  BinStats,
-} from '@/features/waste-management/types';
+import type { Bin, ApiResponse } from '@/features/waste-management/types';
 
-export class BinApiService {
-  static async getAllBins(filters?: {
-    bin_type?: BinType;
-    status?: BinStatus;
-  }): Promise<Bin[]> {
-    const params = new URLSearchParams();
-    if (filters?.bin_type) params.append('bin_type', filters.bin_type);
-    if (filters?.status) params.append('status', filters.status);
+export async function fetchBins(): Promise<Bin[]> {
+  const response = await apiClient.get('/bins');
+  const data: ApiResponse<Bin[]> = response.data;
 
-    const response = await fetch(`${apiClient}/bins?${params}`);
-    const data = await response.json();
-    return data.data.bins;
+  if (!data.success || !data.data) {
+    throw new Error('Failed to fetch bins');
   }
 
-  static async getBinById(id: number): Promise<Bin> {
-    const response = await fetch(`${apiClient}/bins/${id}`);
-    const data = await response.json();
-    return data.data.bin;
+  return data.data;
+}
+
+export async function fetchNearbyBins(
+  lat: number,
+  lng: number,
+  type: string = 'All',
+  search: string = ''
+): Promise<Bin[]> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lng: lng.toString(),
+    type,
+    search,
+  });
+
+  const response = await apiClient.get(`/bins/nearby?${params}`);
+  const data: ApiResponse<Bin[]> = response.data;
+
+  if (!data.success || !data.data) {
+    throw new Error('Failed to fetch nearby bins');
   }
 
-  static async createBin(binData: Partial<Bin>): Promise<Bin> {
-    const response = await fetch(`${apiClient}/bins`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(binData),
-    });
-    const data = await response.json();
-    return data.data;
+  return data.data;
+}
+
+export async function fetchBinById(id: number): Promise<Bin> {
+  const response = await apiClient.get(`/bins/${id}`);
+  const data: ApiResponse<Bin> = response.data;
+
+  if (!data.success || !data.data) {
+    throw new Error('Bin not found');
   }
 
-  static async updateBinStatus(id: number, status: BinStatus): Promise<Bin> {
-    const response = await fetch(`${apiClient}/bins/${id}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    const data = await response.json();
-    return data.data;
+  return data.data;
+}
+
+export async function fetchNearestBin(lat: number, lng: number): Promise<Bin> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lng: lng.toString(),
+  });
+
+  const response = await apiClient.get(`/bins/nearest?${params}`);
+  const data: ApiResponse<Bin> = response.data;
+
+  if (!data.success || !data.data) {
+    throw new Error('Failed to fetch nearest bin');
   }
 
-  static async recordCollection(id: number, weight?: number): Promise<Bin> {
-    const response = await fetch(`${apiClient}/bins/${id}/collect`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collected_weight: weight }),
-    });
-    const data = await response.json();
-    return data.data;
-  }
-
-  static async getNearestBins(
-    lat: number,
-    lng: number,
-    binType?: BinType,
-    limit = 5
-  ): Promise<BinWithDistance[]> {
-    const params = new URLSearchParams({
-      lat: lat.toString(),
-      lng: lng.toString(),
-      limit: limit.toString(),
-    });
-    if (binType) params.append('bin_type', binType);
-
-    const response = await fetch(`${apiClient}/bins/nearest?${params}`);
-    const data = await response.json();
-    return data.data.bins;
-  }
-
-  static async getBinStats(): Promise<BinStats> {
-    const response = await fetch(`${apiClient}/bins/stats`);
-    const data = await response.json();
-    return data.data.stats;
-  }
+  return data.data;
 }

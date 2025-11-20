@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, MapPin, Trash2, Check, X } from 'lucide-react';
-import { BinApiService } from '@/features/waste-management/api/bin.api';
+import { BinApiService } from '@/features/waste-management/api/bin.service.api';
 import type {
   Bin,
   BinType,

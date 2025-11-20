@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { BinType } from '@/features/waste-management/types';
-import { BinApiService } from '@/features/waste-management/api/bin.api';
+import { BinApiService } from '@/features/waste-management/api/bin.service.api';
 
 interface AddBinModalProps {
   onClose: () => void;
