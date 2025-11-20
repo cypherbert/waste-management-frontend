@@ -160,7 +160,7 @@ export function BinLocator() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
       <div className="mb-6 flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">CityHub Waste Map</h1>
+        <h1 className="text-2xl font-bold text-gray-800">City Hub Map</h1>
         <button
           onClick={handleFindNearestBin}
           disabled={loading}
@@ -183,7 +183,7 @@ export function BinLocator() {
         Explore recycling and disposal sites across the city. Use the filters to
         view different bin types, select a location from the list, or click
         anywhere on the map to update your position and refresh the nearest
-        results.
+        bins.
       </p>
 
       <div className="grid w-full max-w-6xl gap-6 md:grid-cols-[2fr,1fr]">
