@@ -3,7 +3,6 @@ import type {
   Bin,
   BackendBin,
   BinType,
-  BinStatus,
   BinStats,
   CreateBinData,
 } from '@/features/waste-management/types';
@@ -40,11 +39,9 @@ function transformBin(backendBin: any): Bin {
 export class BinApiService {
   static async getAllBins(filters?: {
     bin_type?: BinType;
-    status?: BinStatus;
   }): Promise<BackendBin[]> {
     const params = new URLSearchParams();
     if (filters?.bin_type) params.append('bin_type', filters.bin_type);
-    if (filters?.status) params.append('status', filters.status);
 
     const response = await apiClient.get(`/bins?${params}`);
     const data = response.data;
@@ -122,10 +119,7 @@ export class BinApiService {
     }
   }
 
-  static async updateBinStatus(
-    id: number,
-    status: BinStatus
-  ): Promise<BackendBin> {
+  static async updateBinStatus(id: number): Promise<BackendBin> {
     const response = await apiClient.put(`/bins/${id}/status`, { status });
     const data = response.data;
     return data;

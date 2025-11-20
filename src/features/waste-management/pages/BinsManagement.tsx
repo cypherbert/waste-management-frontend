@@ -135,19 +135,12 @@ export default function BinsManagement() {
               </div>
               <div className="mb-4 space-y-2 text-sm text-gray-600">
                 <p className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+                  <MapPin className="h-10 w-10" />
                   {bin.address ||
                     `${bin.latitude.toFixed(4)}, ${bin.longitude.toFixed(4)}`}
                 </p>
-                <p>Collected: {bin.total_collected_weight.toFixed(1)} kg</p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleRecordCollection(bin.id, 10)}
-                  className="flex-1 rounded bg-green-500 py-2 text-sm text-white transition hover:bg-green-600"
-                >
-                  Collect
-                </button>
                 <button
                   onClick={() => handleDeleteBin(bin.id)}
                   className="rounded bg-red-500 px-3 py-2 text-sm text-white transition hover:bg-red-600"

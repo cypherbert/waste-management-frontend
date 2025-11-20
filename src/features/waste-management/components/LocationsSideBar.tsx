@@ -46,7 +46,6 @@ export default function LocationsSideBar({
 
     setSearchingLocation(true);
     try {
-      // Use Nominatim (OpenStreetMap geocoding service)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearch)}&limit=1`,
         {
@@ -62,11 +61,9 @@ export default function LocationsSideBar({
         const lat = parseFloat(result.lat);
         const lng = parseFloat(result.lon);
 
-        // Trigger location update in parent component
         if (onLocationSearch) {
           onLocationSearch({ lat, lng });
         } else {
-          // Fallback to custom event
           window.dispatchEvent(
             new CustomEvent('locationSearch', {
               detail: { lat, lng, address: result.display_name },

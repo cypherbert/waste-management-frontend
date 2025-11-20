@@ -20,7 +20,6 @@ import {
 import { NearestBinCard } from '@/features/waste-management/components';
 import { LocationsSideBar } from '@/features/waste-management/components';
 
-// Fix Leaflet default icon
 const icon = new URL(
   'leaflet/dist/images/marker-icon.png',
   import.meta.url
@@ -39,7 +38,6 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Bangkok coordinates as default
 const BANGKOK_COORDS = { lat: 13.7563, lng: 100.5018 };
 
 export function BinLocator() {
@@ -56,7 +54,6 @@ export function BinLocator() {
     setSelectedBinId(null);
   };
 
-  // Fetch all bins to display on map
   useEffect(() => {
     async function loadAllBins() {
       try {
@@ -75,7 +72,6 @@ export function BinLocator() {
     loadAllBins();
   }, []);
 
-  // Fetch nearby bins based on user location and filters
   useEffect(() => {
     async function loadNearbyBins() {
       try {
@@ -83,11 +79,10 @@ export function BinLocator() {
           userLocation.lat,
           userLocation.lng,
           activeTypeFilter === 'All' ? 'All' : activeTypeFilter,
-          '' // No search query - we removed search by name
+          ''
         );
         setBins(data);
 
-        // Auto-select nearest bin on first load
         if (data.length > 0 && selectedBinId === null) {
           setSelectedBinId(data[0].id);
         }

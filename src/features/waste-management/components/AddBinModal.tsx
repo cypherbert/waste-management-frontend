@@ -17,10 +17,8 @@ import type {
 } from '@/features/waste-management/types';
 import { BinApiService } from '@/features/waste-management/api/bin.service.api';
 
-// Bangkok coordinates
 const BANGKOK_COORDS: [number, number] = [13.7563, 100.5018];
 
-// Fix Leaflet default icon
 const icon = new URL(
   'leaflet/dist/images/marker-icon.png',
   import.meta.url
@@ -97,7 +95,6 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
 
     setSearchingLocation(true);
     try {
-      // Use Nominatim (OpenStreetMap geocoding service)
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearch)}&limit=1`,
         {
@@ -135,7 +132,6 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Validate required fields
       if (!formData.bin_name.trim()) {
         alert('Bin name is required');
         setLoading(false);

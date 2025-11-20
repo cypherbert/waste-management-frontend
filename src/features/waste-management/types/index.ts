@@ -81,15 +81,6 @@ export interface BinStats {
   overflowBins: number;
 }
 
-export const BinStatus = {
-  NORMAL: 'NORMAL',
-  OVERFLOW: 'OVERFLOW',
-  NEEDS_COLLECTION: 'NEEDS_COLLECTION',
-  MAINTENANCE: 'MAINTENANCE',
-} as const;
-
-export type BinStatus = (typeof BinStatus)[keyof typeof BinStatus];
-
 export const BinType = {
   RECYCLABLE: 'RECYCLABLE',
   GENERAL: 'GENERAL',
@@ -102,7 +93,6 @@ export type BinType = (typeof BinType)[keyof typeof BinType];
 export type BinFilter = 'All' | BinType;
 
 export interface BinFilters {
-  status?: BinStatus;
   bin_type?: Bin['bin_type'];
   search?: string;
   min_capacity?: number;
@@ -115,7 +105,6 @@ export interface Coordinates {
   lng: number;
 }
 
-// Frontend Bin type for map display
 export interface Bin {
   id: number;
   name: string;
@@ -127,7 +116,6 @@ export interface Bin {
   numericDistance?: number;
 }
 
-// Backend Bin type for management pages
 export interface BackendBin {
   id: number;
   bin_name: string;
