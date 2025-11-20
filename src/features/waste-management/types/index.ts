@@ -99,6 +99,8 @@ export const BinType = {
 
 export type BinType = (typeof BinType)[keyof typeof BinType];
 
+export type BinFilter = 'All' | BinType;
+
 export interface BinFilters {
   status?: BinStatus;
   bin_type?: Bin['bin_type'];
