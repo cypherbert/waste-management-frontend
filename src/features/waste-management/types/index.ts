@@ -115,6 +115,7 @@ export interface Coordinates {
   lng: number;
 }
 
+// Frontend Bin type for map display
 export interface Bin {
   id: number;
   name: string;
@@ -124,6 +125,22 @@ export interface Bin {
   lng: number;
   distance?: string;
   numericDistance?: number;
+}
+
+// Backend Bin type for management pages
+export interface BackendBin {
+  id: number;
+  bin_name: string;
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  capacity_kg: number | null;
+  status: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
+  last_collected_at: string;
+  total_collected_weight: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ApiResponse<T> {

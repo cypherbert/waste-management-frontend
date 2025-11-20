@@ -1,15 +1,46 @@
 import { apiClient } from '@/lib/apiClient';
 import type { Bin, ApiResponse } from '@/features/waste-management/types';
 
+// Transform backend bin format to frontend format
+function transformBin(backendBin: any): Bin {
+  const typeMap: Record<string, 'Recyclable' | 'General Waste' | 'Hazardous'> =
+    {
+      RECYCLABLE: 'Recyclable',
+      GENERAL: 'General Waste',
+      HAZARDOUS: 'Hazardous',
+      ORGANIC: 'General Waste', // Map ORGANIC to General Waste for now
+    };
+
+  const colorMap: Record<string, string> = {
+    RECYCLABLE: 'text-green-600',
+    GENERAL: 'text-blue-600',
+    HAZARDOUS: 'text-yellow-600',
+    ORGANIC: 'text-green-600',
+  };
+
+  return {
+    id: backendBin.id,
+    name: backendBin.bin_name,
+    type: typeMap[backendBin.bin_type] || 'General Waste',
+    color: colorMap[backendBin.bin_type] || 'text-gray-600',
+    lat: Number(backendBin.latitude),
+    lng: Number(backendBin.longitude),
+    distance: backendBin.distance,
+    numericDistance: backendBin.numericDistance,
+  };
+}
+
 export async function fetchBins(): Promise<Bin[]> {
   const response = await apiClient.get('/bins');
-  const data: ApiResponse<Bin[]> = response.data;
+  const data = response.data;
 
-  if (!data.success || !data.data) {
-    throw new Error('Failed to fetch bins');
+  // After interceptor, data is { bins: [...] }
+  if (!data || !data.bins || !Array.isArray(data.bins)) {
+    console.error('Invalid response structure:', data);
+    throw new Error('Failed to fetch bins: Invalid response structure');
   }
 
-  return data.data;
+  return data.bins.map(transformBin);
 }
 
 export async function fetchNearbyBins(
@@ -21,29 +52,32 @@ export async function fetchNearbyBins(
   const params = new URLSearchParams({
     lat: lat.toString(),
     lng: lng.toString(),
-    type,
-    search,
   });
+  if (type !== 'All') params.append('type', type);
+  if (search) params.append('search', search);
 
   const response = await apiClient.get(`/bins/nearby?${params}`);
-  const data: ApiResponse<Bin[]> = response.data;
+  const data = response.data;
 
-  if (!data.success || !data.data) {
-    throw new Error('Failed to fetch nearby bins');
+  // After interceptor, data is { bins: [...] }
+  if (!data || !data.bins || !Array.isArray(data.bins)) {
+    console.error('Invalid response structure:', data);
+    throw new Error('Failed to fetch nearby bins: Invalid response structure');
   }
 
-  return data.data;
+  return data.bins.map(transformBin);
 }
 
 export async function fetchBinById(id: number): Promise<Bin> {
   const response = await apiClient.get(`/bins/${id}`);
-  const data: ApiResponse<Bin> = response.data;
+  const data = response.data;
 
-  if (!data.success || !data.data) {
+  // After interceptor, data is { bin: {...} }
+  if (!data || !data.bin) {
     throw new Error('Bin not found');
   }
 
-  return data.data;
+  return transformBin(data.bin);
 }
 
 export async function fetchNearestBin(lat: number, lng: number): Promise<Bin> {
@@ -53,11 +87,17 @@ export async function fetchNearestBin(lat: number, lng: number): Promise<Bin> {
   });
 
   const response = await apiClient.get(`/bins/nearest?${params}`);
-  const data: ApiResponse<Bin> = response.data;
+  const data = response.data;
 
-  if (!data.success || !data.data) {
+  // After interceptor, data is { bins: [...] }
+  if (
+    !data ||
+    !data.bins ||
+    !Array.isArray(data.bins) ||
+    data.bins.length === 0
+  ) {
     throw new Error('Failed to fetch nearest bin');
   }
 
-  return data.data;
+  return transformBin(data.bins[0]);
 }
