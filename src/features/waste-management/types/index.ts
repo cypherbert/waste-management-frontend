@@ -32,16 +32,11 @@ export interface DailyStats {
 export interface Bin {
   id: number;
   bin_name: string;
-  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude: number;
   longitude: number;
   address: string | null;
   capacity_kg: number | null;
-  status: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
-  last_collected_at: string;
-  total_collected_weight: number;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface BinWithDistance extends Bin {
@@ -50,35 +45,20 @@ export interface BinWithDistance extends Bin {
 
 export interface CreateBinData {
   bin_name: string;
-  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude: number;
   longitude: number;
   address?: string;
   capacity_kg?: number;
-  status?: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
 }
 
 export interface UpdateBinData {
   bin_name?: string;
-  bin_type?: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type?: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude?: number;
   longitude?: number;
   address?: string;
   capacity_kg?: number;
-  status?: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
-}
-
-export interface BinStats {
-  totalBins: number;
-  byType: {
-    bin_type: string;
-    _count: { id: number };
-  }[];
-  byStatus: {
-    status: string;
-    _count: { id: number };
-  }[];
-  overflowBins: number;
 }
 
 export const BinType = {
@@ -119,16 +99,11 @@ export interface Bin {
 export interface BackendBin {
   id: number;
   bin_name: string;
-  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude: number;
   longitude: number;
   address: string | null;
   capacity_kg: number | null;
-  status: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
-  last_collected_at: string;
-  total_collected_weight: number;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface ApiResponse<T> {

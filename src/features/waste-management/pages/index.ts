@@ -1,1 +1,1 @@
-export { default as WasteManagementPage } from './WastemanagementPage.tsx';
+export { default as WasteManagementPage } from '@/features/waste-management/pages/WasteManagementPage';

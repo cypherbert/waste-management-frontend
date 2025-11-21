@@ -1,21 +1,18 @@
 import { apiClient } from '@/lib/apiClient';
-import type { Bin, ApiResponse } from '@/features/waste-management/types';
+import type { Bin } from '@/features/waste-management/types';
 
-// Transform backend bin format to frontend format
 function transformBin(backendBin: any): Bin {
   const typeMap: Record<string, 'Recyclable' | 'General Waste' | 'Hazardous'> =
     {
       RECYCLABLE: 'Recyclable',
       GENERAL: 'General Waste',
       HAZARDOUS: 'Hazardous',
-      ORGANIC: 'General Waste', // Map ORGANIC to General Waste for now
     };
 
   const colorMap: Record<string, string> = {
     RECYCLABLE: 'text-green-600',
     GENERAL: 'text-blue-600',
     HAZARDOUS: 'text-yellow-600',
-    ORGANIC: 'text-green-600',
   };
 
   return {
@@ -59,7 +56,6 @@ export async function fetchNearbyBins(
   const response = await apiClient.get(`/bins/nearby?${params}`);
   const data = response.data;
 
-  // After interceptor, data is { bins: [...] }
   if (!data || !data.bins || !Array.isArray(data.bins)) {
     console.error('Invalid response structure:', data);
     throw new Error('Failed to fetch nearby bins: Invalid response structure');
@@ -72,7 +68,6 @@ export async function fetchBinById(id: number): Promise<Bin> {
   const response = await apiClient.get(`/bins/${id}`);
   const data = response.data;
 
-  // After interceptor, data is { bin: {...} }
   if (!data || !data.bin) {
     throw new Error('Bin not found');
   }
@@ -89,7 +84,6 @@ export async function fetchNearestBin(lat: number, lng: number): Promise<Bin> {
   const response = await apiClient.get(`/bins/nearest?${params}`);
   const data = response.data;
 
-  // After interceptor, data is { bins: [...] }
   if (
     !data ||
     !data.bins ||

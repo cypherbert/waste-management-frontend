@@ -3,11 +3,9 @@ import type {
   Bin,
   BackendBin,
   BinType,
-  BinStats,
   CreateBinData,
 } from '@/features/waste-management/types';
 
-// Transform backend bin format to frontend format
 function transformBin(backendBin: any): Bin {
   const typeMap: Record<string, 'Recyclable' | 'General Waste' | 'Hazardous'> =
     {
@@ -46,13 +44,11 @@ export class BinApiService {
     const response = await apiClient.get(`/bins?${params}`);
     const data = response.data;
 
-    // After interceptor, data is { bins: [...] }
     if (!data || !data.bins || !Array.isArray(data.bins)) {
       console.error('Invalid response structure in getAllBins:', data);
       throw new Error('Failed to fetch bins: Invalid response structure');
     }
 
-    // Convert Decimal types to numbers
     return data.bins.map((bin: any) => ({
       ...bin,
       latitude:
@@ -80,7 +76,6 @@ export class BinApiService {
   }
 
   static async createBin(binData: CreateBinData): Promise<BackendBin> {
-    // Ensure proper data types
     const payload = {
       bin_name: binData.bin_name.trim(),
       bin_type: binData.bin_type,
@@ -90,7 +85,6 @@ export class BinApiService {
       capacity_kg: binData.capacity_kg ? Number(binData.capacity_kg) : null,
     };
 
-    // Validate payload
     if (!payload.bin_name) {
       throw new Error('Bin name is required');
     }
@@ -106,10 +100,9 @@ export class BinApiService {
 
     try {
       const response = await apiClient.post('/bins', payload);
-      // After interceptor, response.data is the bin object directly
+
       return response.data;
     } catch (error: any) {
-      // Extract error message from response
       const errorMessage =
         error?.response?.data?.message ||
         error?.response?.data?.error?.message ||
@@ -156,11 +149,5 @@ export class BinApiService {
     const response = await apiClient.get(`/bins/nearest?${params}`);
     const data = response.data;
     return data.bins.map(transformBin);
-  }
-
-  static async getBinStats(): Promise<BinStats> {
-    const response = await apiClient.get('/bins/stats');
-    const data = response.data;
-    return data.stats;
   }
 }

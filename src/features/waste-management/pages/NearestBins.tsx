@@ -160,7 +160,9 @@ export function BinLocator() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
       <div className="mb-6 flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">City Hub Map</h1>
+        <h1 className="text-2xl font-bold text-gray-800">
+          City Hub Bin Locations
+        </h1>
         <button
           onClick={handleFindNearestBin}
           disabled={loading}
