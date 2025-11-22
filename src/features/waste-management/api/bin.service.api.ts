@@ -24,11 +24,20 @@ function transformBin(backendBin: any): Bin {
 
   return {
     id: backendBin.id,
-    name: backendBin.bin_name,
-    type: typeMap[backendBin.bin_type] || 'General Waste',
+    bin_name: backendBin.bin_name,
+    bin_type: typeMap[backendBin.bin_type] || 'GENERAL',
+    latitude: Number(backendBin.latitude),
+    longitude: Number(backendBin.longitude),
+    capacity_kg: backendBin.capacity_kg
+      ? typeof backendBin.capacity_kg === 'string'
+        ? Number(backendBin.capacity_kg)
+        : backendBin.capacity_kg
+      : null,
+    total_collected_weight:
+      typeof backendBin.total_collected_weight === 'string'
+        ? Number(backendBin.total_collected_weight)
+        : backendBin.total_collected_weight,
     color: colorMap[backendBin.bin_type] || 'text-gray-600',
-    lat: Number(backendBin.latitude),
-    lng: Number(backendBin.longitude),
     distance: backendBin.distance,
     numericDistance: backendBin.numericDistance,
   };

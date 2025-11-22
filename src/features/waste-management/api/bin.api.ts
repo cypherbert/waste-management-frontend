@@ -16,14 +16,12 @@ function transformBin(backendBin: any): Bin {
   };
 
   return {
-    id: backendBin.id,
+    ...backendBin,
     name: backendBin.bin_name,
     type: typeMap[backendBin.bin_type] || 'General Waste',
     color: colorMap[backendBin.bin_type] || 'text-gray-600',
     lat: Number(backendBin.latitude),
     lng: Number(backendBin.longitude),
-    distance: backendBin.distance,
-    numericDistance: backendBin.numericDistance,
   };
 }
 
@@ -31,7 +29,6 @@ export async function fetchBins(): Promise<Bin[]> {
   const response = await apiClient.get('/bins');
   const data = response.data;
 
-  // After interceptor, data is { bins: [...] }
   if (!data || !data.bins || !Array.isArray(data.bins)) {
     console.error('Invalid response structure:', data);
     throw new Error('Failed to fetch bins: Invalid response structure');
